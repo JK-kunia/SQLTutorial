@@ -1,0 +1,104 @@
+//テーブルの全てのカラムを表示
+SELECT * FROM (テーブル名);
+
+//テーブルのidとnameカラムを表示
+SELECT id,name FROM (テーブル名); 
+
+//テーブルにあるvitality5以上のvitalityを大きい順で表示
+SELECT vitality FROM (テーブル名) WHERE vitality >= 5 DESC;
+
+//levelの大きい順にテーブルを表示
+SELECT * FROM (テーブル名) ORDER BY level DESC;
+
+//レベルごとに人数を集計する
+SELECT level, COUNT(*) FROM (テーブル名) GROUP BY level;
+
+//テーブルに追加
+INSERT INTO (テーブル名)(id, name, level) VALUES(10, "エンジニア" , 15);
+
+//カラムの更新
+UPDATE (テーブル名) SET level = level + 1 WHERE id = 1;
+
+//カラムの削除
+DELETE FROM (テーブル名) WHERE id = 1;
+
+//テーブル1.2のid同士で内部結合する
+SELECT * FROM (テーブル1) INNER JOIN (テーブル2) ON (テーブル1).id = (テーブル2).id;
+
+//テーブル1.2のid同士で左結合する(テーブル1基準)
+SELECT * FROM (テーブル1) LEFT JOIN (テーブル2) ON (テーブル1).id = (テーブル2).id;
+
+//テーブル1.2のid同士で右結合する(テーブル2基準)
+SELECT * FROM (テーブル1) RIGHT JOIN (テーブル2) ON (テーブル1).id = (テーブル2).id;
+
+//日にちごとにlogIDの数をカウントして表示
+SELECT DATE(startTime), COUNT(logID) FROM eventlog GROUP BY DATE(startTime);
+
+//2020年4月1日から2020年5月1日のlogIDの数を表示
+SELECT DATE(startTime), COUNT(logID) FROM eventlog WHERE DATE(startTime) BETWEEN "2020-04-01" AND "2020-05-01" GROUP BY DATE(startTime);
+
+//月ごとのにlogIDの数を表示
+SELECT DATE_FORMAT(startTime, '%Y-%m'), COUNT(logID) FROM eventlog GROUP BY DATE_FORMAT(startTime, '%Y-%m');
+
+//合計金額50以上のユーザーごとに合計金額と平均金額を表示
+SELECT (テーブル1).userID AS "ユーザーID", SUM((テーブル2).gold) AS "合計", AVG((テーブル2).gold) AS "平均" FROM
+	(テーブル1) INNER JOIN テーブル2 ON テーブル1.userID = (テーブル2).id
+    GROUP BY (テーブル1).userID HAVING SUM((テーブル2).gold) >= 50;
+    
+//レベルごとの平均経験値と平均ゴールド
+SELECT level, AVG(exp), AVG(gold) FROM users GROUP BY level;
+
+//2020年4月1日時点でユーザーの平均年齢を求める
+SELECT AVG(TIMESTAMPDIFF(YEAR, (誕生日), '2020-04-01')) AS '平均年齢' FROM users;
+
+//nameに'山'のつく物だけ抽出
+SELECT * FROM (テーブル1) WHERE name LIKE "%山%";
+
+//サブクエリを使って月ごとのアクセス数をだす DISTINCT(重複を除く)
+SELECT yearMonth, COUNT(user) FROM 
+    (SELECT 
+        DISTINCT DATE_FORMAT(startTime, '%Y-%m') AS yearMonth,
+        eventlog.userID AS user
+    FROM eventlog INNER JOIN users ON users.userID = eventlog.userID
+    WHERE deleted_at IS NULL) AS ActiveUsers
+    GROUP BY yearMonth;
+
+    //usersテーブルのgoldによって分類
+SELECT
+	userID,
+	gold,
+	CASE
+		WHEN gold >= 3000 THEN "大金持ち"
+		WHEN gold >= 1000 THEN "小金持ち"
+		ELSE "貧乏"
+	END AS finance
+FROM users;
+
+//goldで1or0で分類、COUNTで日にちごとに何人いるかをクロス集計
+SELECT
+	日付,
+	SUM(CASE WHEN finance = "大金持ち" THEN 1 ELSE 0 END) AS "大金持ち",
+	SUM(CASE WHEN finance = "小金持ち" THEN 1 ELSE 0 END) AS "小金持ち",
+	SUM(CASE WHEN finance = "発展途上" THEN 1 ELSE 0 END) AS "発展途上"
+FROM ( SELECT DISTINCT
+	DATE_FORMAT(startTime, '%Y%m') AS 日付,
+	eventlog.userID,
+	(CASE
+		WHEN gold >= 3000 THEN "大金持ち"
+		WHEN gold >= 1000 THEN "小金持ち"
+		ELSE "発展途上"
+	END) AS finance
+	FROM eventlog
+		INNER JOIN users ON users.userID = eventlog.userID
+	) AS クラス分け
+GROUP BY 日付;
+
+//サブクエリを使って平均以上のgoldを持つユーザー数を表示する
+SELECT userID, name, gold FROM users WHERE gold >= (SELECT AVG(gold) FROM users);
+
+//年齢の合計、ユーザー数、ユーザーの平均年齢を求める
+SELECT
+	SUM(TIMESTAMPDIFF(YEAR, birth, '2020-04-01')) AS '年齢の合計',
+	COUNT(*) AS 'ユーザー数',
+	SUM(TIMESTAMPDIFF(YEAR, birth, '2020-04-01')) / COUNT(*) AS '平均年齢'
+FROM users;
