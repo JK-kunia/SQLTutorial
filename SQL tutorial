@@ -96,7 +96,7 @@ GROUP BY 日付;
 //サブクエリを使って平均以上のgoldを持つユーザー数を表示する
 SELECT userID, name, gold FROM users WHERE gold >= (SELECT AVG(gold) FROM users);
 
-//年齢の合計、ユーザー数、ユーザーの平均年齢を求める
+//2020年4月1日までの年齢の合計、ユーザー数、ユーザーの平均年齢を求める
 SELECT
 	SUM(TIMESTAMPDIFF(YEAR, birth, '2020-04-01')) AS '年齢の合計',
 	COUNT(*) AS 'ユーザー数',
